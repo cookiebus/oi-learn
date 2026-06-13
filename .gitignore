@@ -39,3 +39,16 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# 信奥学 - 数据库
+dev.db
+dev.db-journal
+prisma/dev.db
+prisma/dev.db-journal
+
+# 日志
+logs/
+
+# SSL 证书（生产手动管理）
+ssl/*.pem
+ssl/*.key

@@ -1,0 +1,160 @@
+// 信奥学习平台数据模型
+// 开发环境：SQLite（DATABASE_URL="file:./dev.db"）
+// 生产环境：PostgreSQL（DATABASE_URL="postgresql://..."）
+//
+// 切换 PostgreSQL 时：
+//   1. 修改 datasource provider 为 "postgresql"
+//   2. 所有 String? 字段加上 @db.Text（下面的注释已标注）
+//   3. 运行 npx prisma db push
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ========== 用户 ==========
+model User {
+  id            String   @id @default(cuid())
+  name          String?
+  email         String   @unique
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String?
+  role          String   @default("STUDENT") // STUDENT | TEACHER | ADMIN
+  accounts      Account[]
+  sessions      Session[]
+  progress      StudentProgress[]
+  answers       UserAnswer[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? // PG: @db.Text
+  access_token      String? // PG: @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? // PG: @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ========== 知识点 ==========
+model KnowledgePoint {
+  id            String   @id @default(cuid())
+  title         String
+  slug          String   @unique
+  description   String?  // PG: @db.Text
+  content       String?  // PG: @db.Text (Markdown 讲义)
+  difficulty    Int      @default(1) // 1-5
+  estimatedMin  Int?
+  videoUrl      String?  // 阿里云 VOD ID
+  videoDuration Int?
+  orderIndex    Int      @default(0)
+  isPublished   Boolean  @default(false)
+  category      String?  // 语法基础 | 数据结构 | 算法 | STL
+  icon          String?
+
+  prerequisites Prerequisite[] @relation("point")
+  dependedBy    Prerequisite[] @relation("prerequisite")
+  questions     Question[]
+  progresses    StudentProgress[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// 前置依赖（DAG 有向无环图）
+model Prerequisite {
+  id              String @id @default(cuid())
+  pointId         String
+  prerequisiteId  String
+
+  point        KnowledgePoint @relation("point", fields: [pointId], references: [id], onDelete: Cascade)
+  prerequisite KnowledgePoint @relation("prerequisite", fields: [prerequisiteId], references: [id], onDelete: Cascade)
+
+  @@unique([pointId, prerequisiteId])
+}
+
+// ========== 学生进度 ==========
+model StudentProgress {
+  id        String   @id @default(cuid())
+  userId    String
+  pointId   String
+  status    String   @default("LOCKED") // LOCKED | UNLOCKED | LEARNING | COMPLETED
+  testScore Float?
+  completedAt DateTime?
+
+  user  User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  point KnowledgePoint @relation(fields: [pointId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, pointId])
+}
+
+// ========== 题目 ==========
+model Question {
+  id              String   @id @default(cuid())
+  pointId         String
+  type            String   // CHOICE | CODE
+  title           String?
+  question        String   // PG: @db.Text
+  options         String?  // PG: @db.Text (JSON)
+  correctAnswer   String?
+  codeTemplate    String?  // PG: @db.Text
+  judgeConfig     String?  // PG: @db.Text (JSON)
+  wikioiProblemId Int?
+  orderIndex      Int      @default(0)
+  explanation     String?  // PG: @db.Text
+
+  point   KnowledgePoint @relation(fields: [pointId], references: [id], onDelete: Cascade)
+  answers UserAnswer[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ========== 学生答题记录 ==========
+model UserAnswer {
+  id         String   @id @default(cuid())
+  userId     String
+  questionId String
+  answer     String?  // PG: @db.Text（选择题答案）
+  code       String?  // PG: @db.Text（提交代码）
+  isCorrect  Boolean?
+  score      Float?
+  judgeResult String? // PG: @db.Text（OJ 判题结果 JSON）
+  submittedAt DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+}

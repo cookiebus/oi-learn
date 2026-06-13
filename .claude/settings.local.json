@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx prisma *)",
+      "Bash(npm install *)",
+      "Bash(npx tsx *)",
+      "Bash(./node_modules/.bin/tsx *)",
+      "Bash(npx next *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3355/)",
+      "Bash(curl -s http://localhost:3355/)",
+      "Bash(curl -s -o /tmp/oi-test.html -w \"%{http_code}\" http://localhost:3355/)",
+      "Read(//tmp/**)",
+      "Bash(kill 36025 36001)",
+      "Bash(curl -v http://localhost:3355/)",
+      "Bash(curl -v --noproxy '*' http://localhost:3355/)",
+      "Bash(curl -s --noproxy '*' -o /dev/null -w \"%{http_code}\" http://localhost:3355/)",
+      "Bash(curl -s --noproxy '*' http://localhost:3355/)",
+      "Bash(chmod +x /Users/minhuanchen/Documents/oi-learn/deploy.sh)",
+      "Bash(git config *)",
+      "Bash(gh auth *)",
+      "Read(//Users/minhuanchen/.ssh/**)",
+      "Bash(ssh *)",
+      "Bash(ssh-keygen -R github.com)",
+      "Bash(rm -f ~/.ssh/known_hosts.old)",
+      "Bash(ssh-keyscan github.com)",
+      "Bash(brew install *)",
+      "Bash(command -v gh)",
+      "Bash(gh --version)",
+      "Bash(echo \"gh installed: $\\(gh --version\\)\")",
+      "Bash(git init *)",
+      "Bash(git add *)",
+      "Bash(git commit -m '🎉 初始提交：信奥自适应学习平台 *)"
+    ]
+  }
+}
