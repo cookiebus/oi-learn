@@ -29,7 +29,10 @@
       "Bash(echo \"gh installed: $\\(gh --version\\)\")",
       "Bash(git init *)",
       "Bash(git add *)",
-      "Bash(git commit -m '🎉 初始提交：信奥自适应学习平台 *)"
+      "Bash(git commit -m '🎉 初始提交：信奥自适应学习平台 *)",
+      "Bash(gh repo *)",
+      "Bash(git commit -m '✨ 新增：在线代码编辑器 + AI 代码审查 + 练习场 *)",
+      "Bash(git push *)"
     ]
   }
 }

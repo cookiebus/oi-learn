@@ -8,8 +8,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { VideoPlayer } from "@/components/video-player"
 import { Quiz } from "@/components/quiz"
 import { AIChat } from "@/components/ai-chat"
+import { AICodeReview } from "@/components/ai-code-review"
 import { difficultyLabel } from "@/lib/utils"
-import { ArrowLeft, Clock, Lock, FileText, Video, HelpCircle, ChevronLeft } from "lucide-react"
+import { ArrowLeft, Clock, Lock, FileText, Video, HelpCircle, Code, ChevronLeft } from "lucide-react"
 import Link from "next/link"
 
 interface PointData {
@@ -60,7 +61,6 @@ export function PointDetailClient({ point, questions, status, isLocked, lockedPr
       })
 
       if (passed) {
-        // 短暂展示通过页面后跳转回知识图谱
         setTimeout(() => {
           router.push("/learn")
           router.refresh()
@@ -97,6 +97,10 @@ export function PointDetailClient({ point, questions, status, isLocked, lockedPr
   const choiceQuestions = questions.filter((q) => q.type === "CHOICE")
   const hasQuiz = choiceQuestions.length > 0
 
+  // 找到第一个代码题的模板作为练习默认代码
+  const codeQuestion = questions.find((q) => q.type === "CODE")
+  const codeTemplate = codeQuestion?.codeTemplate || undefined
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
       {/* 顶部导航 */}
@@ -123,11 +127,6 @@ export function PointDetailClient({ point, questions, status, isLocked, lockedPr
                   {point.estimatedMin} 分钟
                 </span>
               )}
-              {point.videoDuration && (
-                <span>
-                  视频: {Math.floor(point.videoDuration / 60)}:{String(point.videoDuration % 60).padStart(2, "0")}
-                </span>
-              )}
             </div>
           </div>
         </div>
@@ -135,37 +134,43 @@ export function PointDetailClient({ point, questions, status, isLocked, lockedPr
 
       <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
         {/* 主要内容区 */}
-        <div className="space-y-6">
-          {/* 视频 */}
-          <Card>
-            <CardContent className="p-0 overflow-hidden rounded-xl">
-              <VideoPlayer
-                src={point.videoUrl || ""}
-                title={point.title}
-                onProgress={setVideoProgress}
-              />
-            </CardContent>
-          </Card>
+        <div className="space-y-6 min-w-0">
+          {/* 视频（有视频才显示） */}
+          {point.videoUrl && (
+            <Card>
+              <CardContent className="p-0 overflow-hidden rounded-xl">
+                <VideoPlayer
+                  src={point.videoUrl}
+                  title={point.title}
+                  onProgress={setVideoProgress}
+                />
+              </CardContent>
+            </Card>
+          )}
 
           {/* 内容标签页 */}
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList>
+            <TabsList className="w-full justify-start overflow-x-auto">
               <TabsTrigger value="content" className="flex items-center gap-1.5">
                 <FileText className="h-4 w-4" />
                 讲义
               </TabsTrigger>
+              <TabsTrigger value="code" className="flex items-center gap-1.5">
+                <Code className="h-4 w-4" />
+                写代码 ✨
+              </TabsTrigger>
               <TabsTrigger value="quiz" className="flex items-center gap-1.5" disabled={!hasQuiz}>
                 <HelpCircle className="h-4 w-4" />
-                测试{hasQuiz ? ` (${choiceQuestions.length}题)` : ""}
+                选择题{hasQuiz ? ` (${choiceQuestions.length}题)` : ""}
               </TabsTrigger>
             </TabsList>
 
+            {/* 讲义 */}
             <TabsContent value="content">
               <Card>
                 <CardContent className="p-6">
                   {point.content ? (
                     <div className="prose prose-sm max-w-none prose-code:bg-gray-100 prose-code:px-1 prose-code:rounded">
-                      {/* 简单 Markdown 渲染：换行分段、代码块 */}
                       {point.content.split("\n").map((line, i) => {
                         if (line.startsWith("```")) return null
                         if (line.startsWith("## ")) {
@@ -179,12 +184,41 @@ export function PointDetailClient({ point, questions, status, isLocked, lockedPr
                       })}
                     </div>
                   ) : (
-                    <p className="text-gray-400 text-sm">暂无讲义内容</p>
+                    <div className="text-center py-12 text-gray-400">
+                      <FileText className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                      <p>暂无讲义内容</p>
+                      <p className="text-sm mt-1">你可以联系老师添加讲义，或者直接点击"写代码"开始练习</p>
+                    </div>
                   )}
                 </CardContent>
               </Card>
             </TabsContent>
 
+            {/* 写代码练习 */}
+            <TabsContent value="code">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Code className="h-5 w-5 text-blue-500" />
+                    代码练习
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="mb-4 text-sm text-gray-500 bg-blue-50 rounded-lg p-3 border border-blue-100">
+                    <p className="font-medium text-blue-700 mb-1">💡 练习说明</p>
+                    <p>编写 C++ 代码，然后点击 <strong>"AI 审查代码"</strong> 按钮。</p>
+                    <p>AI 会帮你检查语法错误、逻辑问题，并给出改进建议！</p>
+                  </div>
+                  <AICodeReview
+                    problemTitle={point.title}
+                    problemDescription={point.description || undefined}
+                    template={codeTemplate}
+                  />
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* 选择题测试 */}
             <TabsContent value="quiz">
               <Quiz
                 questions={choiceQuestions}
@@ -195,7 +229,7 @@ export function PointDetailClient({ point, questions, status, isLocked, lockedPr
           </Tabs>
         </div>
 
-        {/* 侧边栏 - AI 助手 */}
+        {/* 侧边栏 - AI 助教 */}
         <div className="lg:sticky lg:top-20">
           <AIChat pointTitle={point.title} pointContent={point.content || undefined} />
         </div>

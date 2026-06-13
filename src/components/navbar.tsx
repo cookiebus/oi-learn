@@ -4,7 +4,7 @@ import Link from "next/link"
 import { useSession, signOut } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { BookOpen, LogOut, User, Settings } from "lucide-react"
+import { BookOpen, LogOut, User, Code2 } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,11 +29,14 @@ export function Navbar() {
           {session ? (
             <>
               <Link href="/learn">
-                <Button variant="ghost" size="sm">学习</Button>
+                <Button variant="ghost" size="sm">📚 学习</Button>
+              </Link>
+              <Link href="/practice">
+                <Button variant="ghost" size="sm">💻 练代码</Button>
               </Link>
               {session.user.role === "ADMIN" && (
                 <Link href="/admin">
-                  <Button variant="ghost" size="sm">管理</Button>
+                  <Button variant="ghost" size="sm">⚙️ 管理</Button>
                 </Link>
               )}
               <DropdownMenu>
